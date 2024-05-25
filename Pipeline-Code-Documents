@@ -1,0 +1,11 @@
+#All the below Links are Officical Pages Codes In all Pipelines taken from Below Links
+
+#Jenkins Pipeline Document: 
+   https://www.jenkins.io/doc/book/pipeline/
+
+#Sonar Scanner Documents : 
+   https://www.jenkins.io/doc/pipeline/steps/sonar/
+
+#Nexus  Artifact Uploader Document:
+  https://plugins.jenkins.io/nexus-artifact-uploader/
+
