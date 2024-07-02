@@ -21,3 +21,12 @@
 #Ansible Documentation
   https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html
 
+#Ansible Inventory
+  https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
+
+#Ansible Modules
+  https://docs.ansible.com/ansible/2.9/modules/list_of_all_modules.html
+
+#Ansible ad-hoc commands
+  https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html
+
