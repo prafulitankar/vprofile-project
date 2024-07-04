@@ -6,8 +6,8 @@ pipeline {
     }
 
     environment {
-	    registry = "devops-weekend"
-	    registryCredential = 'dockerhub'
+	registry = "devops-weekend"
+	registryCredential = 'dockerhub'
         DOCKER_IMAGE = 'stepstech/devops-weekend:latest'
         CONTAINER_NAME = 'webapp2'
     }
