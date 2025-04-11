@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   vprodb:
-    image: vprocontainers/vprofiledb
+    image: stepstech/java-project:db
     build:
       context: ./javaapi
     ports:
@@ -25,14 +25,14 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
 
   vproapp:
-    image: vprocontainers/vprofileapp
+    image: stepstech/java-project:app
     ports:
       - "8080:8080"
     volumes: 
       - vproappdata:/usr/local/tomcat/webapps
 
   vproweb:
-    image: vprocontainers/vprofileweb
+    image: stepstech/java-project:web
     ports:
       - "80:80"
 volumes:
