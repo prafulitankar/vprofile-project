@@ -8,7 +8,7 @@ pipeline {
     environment {
         DOCKER_CREDENTIALS_ID = 'dockerhub' // Jenkins credentials ID for Docker Hub
         DOCKER_IMAGE_NAME = 'stepstech/devops-weekend'
-        DOCKER_TAG = '${BUILD_ID}' // You can use versioning or a unique tag as needed
+        DOCKER_TAG = 'latest' // You can use versioning or a unique tag as needed
         //DOCKER_HOST = '172.31.72.40'
         //registry = "devops-weekend"
         CONTAINER_NAME = "webapp-${env.BUILD_ID}"
@@ -48,7 +48,7 @@ pipeline {
             }
 
         }
-        stage ("Artifact Uploader"){
+        /*stage ("Artifact Uploader"){
             steps {
                 nexusArtifactUploader(
                 nexusVersion: 'nexus3',
@@ -66,18 +66,19 @@ pipeline {
                 ]
              )
             }
-        }
+        }*/
         
         stage('Build Docker Image') {
             steps {
                 script {
                     // Build the Docker image
-                    docker.build("${DOCKER_IMAGE_NAME}:${BUILD_ID}")
+                    //docker.build("${DOCKER_IMAGE_NAME}:${BUILD_ID}") // To version the Docker Images
+                    docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}") // To provide the same tag i.e. latest 
                 }
             }
         }
-        
-        stage('List Running Docker Container') {
+        //To remove Old Containers
+        /*stage('List Running Docker Container and Remove') {
             steps {
                 sh 'docker ps -q'
                 echo "Running container having above ids"
@@ -85,12 +86,16 @@ pipeline {
                 sh 'docker container rm $(docker ps -qa)'
                  
             }
-        }
+        }*/
         stage('Build Docker Container') {
             steps {
                 script {
                     // Run Docker container from image
-                    docker.image("${DOCKER_IMAGE_NAME}:${BUILD_ID}").run('-p 80${BUILD_ID}:8080 --name ${CONTAINER_NAME}') // Example run options: detached mode, port mapping
+                    docker.image("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}").run('-p 8032:8080 --name ${CONTAINER_NAME}') 
+                    //Container run with the latest tag and constant port i.e. 8012
+                    //docker.image("${DOCKER_IMAGE_NAME}:${BUILD_ID}").run('-p 80${BUILD_ID}:8080 --name ${CONTAINER_NAME}') 
+                    // Example run options: detached mode, port mapping In this command docker image is version and container run with different port i.e.80with build id 
+                    
                 }
             }
         }
@@ -109,7 +114,8 @@ pipeline {
                 script {
                     // Push the Docker image to Docker Hub
                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                        docker.image("${DOCKER_IMAGE_NAME}:${BUILD_ID}").push("${BUILD_ID}")
+                        docker.image("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}").push("${DOCKER_TAG}") //push the docker images with tag latest
+                        //docker.image("${DOCKER_IMAGE_NAME}:${BUILD_ID}").push("${BUILD_ID}") // push the docker images with the versioning
                         echo 'Docker Image Successfully Pushed to Docker Hub'
                     }
                 }
