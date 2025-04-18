@@ -9,11 +9,7 @@ pipeline {
         DOCKER_CREDENTIALS_ID = 'dockerhub' // Jenkins credentials ID for Docker Hub
         DOCKER_IMAGE_NAME = 'stepstech/devops-weekend'
         DOCKER_TAG = 'latest' // You can use versioning or a unique tag as needed
-        //DOCKER_HOST = '172.31.72.40'
-        //registry = "devops-weekend"
         CONTAINER_NAME = "webapp-${env.BUILD_ID}"
-        //PREVIOUS_BUILD = "${env.previousBuild}"
-        
     }
 
     stages {
@@ -48,7 +44,7 @@ pipeline {
             }
 
         }
-        /*stage ("Artifact Uploader"){
+        stage ("Artifact Uploader"){
             steps {
                 nexusArtifactUploader(
                 nexusVersion: 'nexus3',
@@ -66,7 +62,7 @@ pipeline {
                 ]
              )
             }
-        }*/
+        }
         
         stage('Build Docker Image') {
             steps {
@@ -77,8 +73,8 @@ pipeline {
                 }
             }
         }
-        //To remove Old Containers
-        /*stage('List Running Docker Container and Remove') {
+        //To remove Old Containers on Jenkins Server
+        stage('List Running Docker Container and Remove') {
             steps {
                 sh 'docker ps -q'
                 echo "Running container having above ids"
@@ -86,7 +82,7 @@ pipeline {
                 sh 'docker container rm $(docker ps -qa)'
                  
             }
-        }*/
+        }
         stage('Build Docker Container') {
             steps {
                 script {
@@ -121,7 +117,49 @@ pipeline {
                 }
             }
         }
-    }
+        stage('Pull Docker Image on Remote Docker host') {
+          steps {
+            sshagent(['jenkins-docker-intergation']) { 
+                sh "ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118  'docker pull $DOCKER_IMAGE_NAME:$DOCKER_TAG'"
+                // jenkins-docker-intergation : add credential to connect docker host using Username with Private SSH key
+                //Note : docker image pull by ubuntu user on remote docker host so ubuntu user must be part of docker group [usermod -aG  docker ubuntu]
+                echo 'Docker Image Pulled on Remote Docker Host Successfully'
+            }
+         }
+      }
+     
+        stage('Scan Docker Image by Trivy') {
+          steps {
+            sshagent(['jenkins-docker-intergation']) { 
+                sh "ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118  'trivy image $DOCKER_IMAGE_NAME:$DOCKER_TAG'"
+                // jenkins-docker-intergation : add credential to connect docker host using Username with Private SSH key
+                echo 'Docker Image Scanned Successfully'
+            }
+         }
+      }
+        //To remove Old Containers on Remote docker host
+        stage('List Running Docker Container and Remove on Remote Host') {
+            steps {
+               sshagent(['jenkins-docker-intergation']) { 
+			   sh """ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118 '
+			         docker ps -aq | xargs -r docker stop &&
+                     docker ps -aq | xargs -r docker rm
+               '
+			   """
+			   }
+            }
+        }
+        stage('Build Docker Container on Remote Host') {
+            steps {
+                sshagent(['jenkins-docker-intergation']) {
+                    // Run Docker container from image
+                    //docker.image("${DOCKER_IMAGE_NAME}").run('-d -p 8006:8080 --name ${CONTAINER_NAME}') // Example run options: detached mode, port mapping
+                    sh "ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118 'docker run -itd --name $CONTAINER_NAME -p 8020:8080 $DOCKER_IMAGE_NAME:$DOCKER_TAG'"
+                    echo 'Docker Container Successfully run on Remote Docker Host'
+                }
+            }
+        }
+     }
     
         post {
             success {
