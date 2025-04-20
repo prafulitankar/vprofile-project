@@ -3,7 +3,7 @@
 #RUN git clone https://github.com/devopshydclub/vprofile-project.git
 #RUN cd vprofile-project && git checkout docker && mvn install
 
-FROM tomcat:9-jre11
+FROM tomcat:10-jdk21
 
 RUN rm -rf /usr/local/tomcat/webapps/*
 
