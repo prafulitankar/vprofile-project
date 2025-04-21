@@ -10,12 +10,20 @@ pipeline {
         DOCKER_IMAGE_NAME = 'stepstech/devops-weekend'
         DOCKER_TAG = 'latest' // You can use versioning or a unique tag as needed
         CONTAINER_NAME = "webapp-${env.BUILD_ID}"
+        registryCredential = 'ecr:ap-south-1:awscreds'
+        appRegistry = "114215073164.dkr.ecr.ap-south-1.amazonaws.com/steps"
+        vprofileRegistry = "https://114215073164.dkr.ecr.ap-south-1.amazonaws.com/steps"
+        cluster = "testcluster"
+        service = "testappsvc"
+        ecr_repo = 'step'
+        app_tag= 'app'
     }
 
     stages {
         stage ('Fetching code') {
             steps {
-                git branch : 'main' , url: 'https://github.com/prafulitankar/vprofile-project-old.git'
+                //git branch: 'main', url: 'https://github.com/prafulitankar/vprofile-project.git' //for docker host
+                git branch: 'docker', url: 'https://github.com/hkhcoder/vprofile-project.git' //for AWS ECS
             }
         }
 
@@ -44,7 +52,7 @@ pipeline {
             }
 
         }
-        stage ("Artifact Uploader"){
+        /*stage ("Artifact Uploader"){
             steps {
                 nexusArtifactUploader(
                 nexusVersion: 'nexus3',
@@ -62,19 +70,19 @@ pipeline {
                 ]
              )
             }
-        }
+        }*/
         
-        stage('Build Docker Image') {
+        /*stage('Build Docker Image') {
             steps {
                 script {
                     // Build the Docker image
                     //docker.build("${DOCKER_IMAGE_NAME}:${BUILD_ID}") // To version the Docker Images
-                    docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}") // To provide the same tag i.e. latest 
+                    docker.build("${DOCKER_IMAGE_NAME}:latest") // To provide the same tag i.e. latest 
                 }
             }
-        }
-        //To remove Old Containers on Jenkins Server
-        stage('List Running Docker Container and Remove') {
+        }*/
+        //To remove Old Containers
+        /*stage('List Running Docker Container and Remove') {
             steps {
                 sh 'docker ps -q'
                 echo "Running container having above ids"
@@ -82,8 +90,8 @@ pipeline {
                 sh 'docker container rm $(docker ps -qa)'
                  
             }
-        }
-        stage('Build Docker Container') {
+        }*/
+        /*stage('Build Docker Container') {
             steps {
                 script {
                     // Run Docker container from image
@@ -94,8 +102,8 @@ pipeline {
                     
                 }
             }
-        }
-        stage('Login to Docker Hub') {
+        }*/
+        /*stage('Login to Docker Hub') {
             steps {
                 script {
                     // Login to Docker Hub
@@ -104,8 +112,8 @@ pipeline {
                     }
                 }
             }
-        }
-        stage('Push Docker Image') {
+        }*/
+        /*stage('Push Docker Image') {
             steps {
                 script {
                     // Push the Docker image to Docker Hub
@@ -116,8 +124,8 @@ pipeline {
                     }
                 }
             }
-        }
-        stage('Pull Docker Image on Remote Docker host') {
+        }*/
+        /*stage('Pull Docker Image on Remote Docker host') {
           steps {
             sshagent(['jenkins-docker-intergation']) { 
                 sh "ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118  'docker pull $DOCKER_IMAGE_NAME:$DOCKER_TAG'"
@@ -126,9 +134,9 @@ pipeline {
                 echo 'Docker Image Pulled on Remote Docker Host Successfully'
             }
          }
-      }
+      }*/
      
-        stage('Scan Docker Image by Trivy') {
+        /*stage('Scan Docker Image by Trivy') {
           steps {
             sshagent(['jenkins-docker-intergation']) { 
                 sh "ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118  'trivy image $DOCKER_IMAGE_NAME:$DOCKER_TAG'"
@@ -136,9 +144,9 @@ pipeline {
                 echo 'Docker Image Scanned Successfully'
             }
          }
-      }
+      }*/
         //To remove Old Containers on Remote docker host
-        stage('List Running Docker Container and Remove on Remote Host') {
+        /*stage('List Running Docker Container and Remove on Remote Host') {
             steps {
                sshagent(['jenkins-docker-intergation']) { 
 			   sh """ssh -o StrictHostKeyChecking=no -l ubuntu 172.31.11.118 '
@@ -148,8 +156,8 @@ pipeline {
 			   """
 			   }
             }
-        }
-        stage('Build Docker Container on Remote Host') {
+        }*/
+        /*stage('Build Docker Container on Remote Host') {
             steps {
                 sshagent(['jenkins-docker-intergation']) {
                     // Run Docker container from image
@@ -158,7 +166,47 @@ pipeline {
                     echo 'Docker Container Successfully run on Remote Docker Host'
                 }
             }
+        }*/
+        stage('Build App Image') {
+          steps {
+            script {
+                dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", "./Docker-files/app/multistage/")
+                //dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", ".")
+                //dockerImage = docker.build( appRegistry + ":app", ".")
+                /*dir('Docker-files/app/multistage/') {
+                    sh """
+                        docker build -t $appRegistry/$ecr_repo:$app_tag .
+                    """
+                }*/
+                }
+          }
         }
+        stage('Upload App Image in ECR') {
+          steps{
+            script {
+              docker.withRegistry( vprofileRegistry, registryCredential ) {
+                /*dockerImage.push("$BUILD_NUMBER")*/
+                echo "Login successed to ECR registry"
+                dockerImage.push('latest')
+                echo "Docker latest image pushed to the Docker Container Registry"
+              }
+            }
+          }
+        }
+        /*stage('Remove Container Images'){
+            steps{
+                sh 'docker rmi -f $(docker images -a -q)'
+            }
+        }*/
+        
+        stage('Deploy to ecs') {
+          steps {
+            withAWS(credentials: 'awscreds', region: 'ap-south-1') {
+            sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment'
+            }
+          }
+        }
+
      }
     
         post {
