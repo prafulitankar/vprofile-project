@@ -1,0 +1,21 @@
+---
+- name : update the Servers
+  hosts : webservers
+  tasks :
+    - name : update the web server
+      apt:
+        update_cache: yes
+        upgrade: dist
+        force_apt_get: yes
+      become: yes
+
+
+- name : update the Servers
+  hosts : dbservers
+  tasks :
+    - name : update the db server
+      apt:
+        update_cache: yes
+        upgrade: dist
+        force_apt_get: yes
+      become: yes

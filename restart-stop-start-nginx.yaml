@@ -1,0 +1,9 @@
+---
+- name: Restart , start , stop nginx Server
+  hosts: webservers
+  tasks:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: started/restarted/stopped
+      become: yes

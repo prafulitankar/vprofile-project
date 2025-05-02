@@ -1,0 +1,12 @@
+---
+- name: Create an empty file
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Create /tmp/hello.txt
+      file:
+        path: /tmp/hello.txt
+        state: touch
+        mode: '0644'
+        owner: root
+        group: root

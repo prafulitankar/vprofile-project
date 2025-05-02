@@ -1,0 +1,12 @@
+---
+- name: Create a directory on remote server
+  hosts: webservers
+  become: yes  # Use sudo if required
+  tasks:
+    - name: Create /opt/my_app directory
+      file:
+        path: /opt/my_app
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
