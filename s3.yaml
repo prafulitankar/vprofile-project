@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creating an s3 bucket using cloudformation
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Provide a name for your s3 bucket. Bucket name must be unique
+    ConstraintDescription: Bucket name should be unique and no spacaes are allowed
+    AllowedPattern: ^[a-z0-9,-]{3,63}$
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      VersioningConfiguration:
+        Status: Enabled

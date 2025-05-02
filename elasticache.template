@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template for AWS ElastiCache"
+Parameters:
+  AutomaticFailoverEnabled: 
+    Type: String
+    Default: 'false'
+  CacheNodeType: 
+    Type: String
+    Default: cache.t2.medium
+  ClusterMode: 
+    Type: String
+  Engine: 
+    Type: String
+  EngineVersion: 
+    Type: String
+  Port: 
+    Type: String
+    Default: '6379'
+  PreferredMaintenanceWindow: 
+    Type: String
+    Default: "sun:12:00-sun:14:00"
+  ReplicasPerNodeGroup: 
+    Type: String
+    Default: '2'
+  ReplicationGroupDescription: 
+    Type: String
+    Default: "Replication Group for Blog"
+  RedisSecurityGroup: 
+    Type: String
+  SnapshotRetentionLimit: 
+    Type: String
+    Default: '3'
+  SnapshotWindow: 
+    Type: String
+    Default: "08:00-10:00"
+  SubnetIds: 
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "Private/Public Subnets in same VPC" 
+  TransitEncryptionEnabled: 
+    Type: String
+    Default: 'true'
+  ClusterName: 
+    Type: String
+
+Conditions:
+  HasSecurityGroups: !Not [!Equals ["", !Ref RedisSecurityGroup]]
+  
+Resources:
+  SubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: String
+      SubnetIds: !Ref SubnetIds
+  ReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties: 
+      ReplicationGroupDescription: Replication Group for Testing
+      AutomaticFailoverEnabled: true
+      PreferredMaintenanceWindow: "sun:12:00-sun:14:00"
+      SnapshotRetentionLimit: 2
+      SnapshotWindow: "08:00-10:00"
+      TransitEncryptionEnabled: true
+      Engine: Redis
+      CacheNodeType: cache.t2.medium
+      EngineVersion: "7.0"
+      CacheSubnetGroupName: !Ref 'SubnetGroup'
+      ClusterMode: Disabled
+      SecurityGroupIds: !If [HasSecurityGroups, !Split [",", !Ref RedisSecurityGroup] , !Ref "AWS::NoValue"]
+      ReplicationGroupId: cluster-test-001
+      ReplicasPerNodeGroup: !Ref ReplicasPerNodeGroup
+      AutomaticFailoverEnabled: !Ref AutomaticFailoverEnabled
+      Tags:
+        - Key: Name
+          Value: cluster-test-001
+        - Key: Engine
+          Value: Redis
+      
+      
+      
+      
+      
+      
+  
