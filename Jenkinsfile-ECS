@@ -48,7 +48,7 @@ pipeline {
             }
         }
 
-        stage('Build App Image') {
+        stage('Build App Image into ECR') {
           steps {
        
             script {
